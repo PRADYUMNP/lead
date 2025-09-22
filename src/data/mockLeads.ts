@@ -18,8 +18,9 @@ interface WebhookLeadItem {
   [key: string]: unknown; // For any additional fields
 }
 
-// Using relative path to leverage Vite's proxy in development
-const API_ROUTE = "/api/leads";
+// Use environment variable for API base URL or fallback to relative path
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '';
+const API_ROUTE = `${API_BASE_URL}/api/leads`;
 
 /**
  * Parses date string from webhook format (M/D/YYYY) to Date object
@@ -79,8 +80,16 @@ export const fetchLeads = async (): Promise<Lead[]> => {
     }
 
     // Transform the webhook response data to match our Lead interface
-    if (Array.isArray(data)) {
-      return data.map((item: WebhookLeadItem) => ({
+    // The n8n webhook might return the data in a specific format, so we need to handle that
+    let leadsData = data;
+    
+    // If the response has a 'data' field, use that
+    if (data && typeof data === 'object' && 'data' in data) {
+      leadsData = data.data;
+    }
+    
+    if (Array.isArray(leadsData)) {
+      return leadsData.map((item: WebhookLeadItem) => ({
         id: item['Lead ID'] || `L${String(item.row_number || Math.random()).padStart(4, '0')}`,
         name: item['Name'] || '',
         email: '', // Not provided in webhook data
