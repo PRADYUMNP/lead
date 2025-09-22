@@ -6,6 +6,16 @@
     <title>Lead Management Dashboard - Professional CRM Solution</title>
     <meta name="description" content="Professional Lead Management Dashboard with Excel-like functionality, Zapier integration, and comprehensive analytics. Track leads, conversions, and automate your sales pipeline." />
     <meta name="author" content="Lead Management Pro" />
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      connect-src 'self' https://lead-three-pi.vercel.app https://omkarpp.app.n8n.cloud;
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: https:;
+      font-src 'self';
+      frame-src 'self';
+      media-src 'self';
+    ">
 
     <meta property="og:title" content="Lead Management Dashboard - Professional CRM Solution" />
     <meta property="og:description" content="Professional Lead Management Dashboard with Excel-like functionality, Zapier integration, and comprehensive analytics. Track leads, conversions, and automate your sales pipeline." />
@@ -19,15 +29,16 @@
 
   <body>
     <div id="root"></div>
-    <script type="importmap">
-      {
-        "imports": {
-          "react": "/node_modules/react/index.js",
-          "react-dom": "/node_modules/react-dom/client.js"
-        }
-      }
-    </script>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Fallback for module loading
+      window.addEventListener('error', function(e) {
+        if (e.target && e.target.tagName === 'SCRIPT' && e.target.type === 'module') {
+          console.error('Module loading error:', e);
+          // Optionally reload the page or show an error message
+        }
+      });
+    </script>
     <noscript>You need to enable JavaScript to run this app.</noscript>
   </body>
 </html>

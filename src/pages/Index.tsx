@@ -12,23 +12,33 @@ import { useToast } from "@/hooks/use-toast";
 const Index = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadLeads = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const fetchedLeads = await fetchLeads();
         setLeads(fetchedLeads);
       } catch (error) {
         console.error("Failed to load leads:", error);
+        setError("Failed to load leads. Please check your internet connection and try again.");
+        // You could also show a toast notification here
+        toast({
+          title: "Error",
+          description: "Failed to load leads. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     loadLeads();
-  }, []);
+  }, [toast]);
   const [addLeadDialogOpen, setAddLeadDialogOpen] = useState(false);
-  const { toast } = useToast();
 
   const kpis = calculateKPIs(leads);
   const chartData = generateChartData(leads);

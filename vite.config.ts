@@ -9,10 +9,48 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
   
   return {
-    base: './',
+    base: '/',
+    esbuild: {
+      target: 'es2020',
+      supported: { 
+        'top-level-await': true
+      },
+      jsx: 'automatic'
+    },
+    optimizeDeps: {
+      esbuildOptions: {
+        target: 'es2020',
+        supported: { 
+          'top-level-await': true,
+          'dynamic-import': true
+        },
+        // Ensure proper JSX handling
+        jsx: 'automatic'
+      },
+      // Force dependency pre-bundling
+      include: ['react', 'react-dom', 'react-router-dom']
+    },
     server: {
       host: "::",
       port: 8080,
+      strictPort: true,
+      headers: {
+        'Cross-Origin-Embedder-Policy': 'require-corp',
+        'Cross-Origin-Opener-Policy': 'same-origin',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
+        'Access-Control-Allow-Headers': 'X-Requested-With, Content-Type, Authorization',
+        'Content-Security-Policy': [
+          "default-src 'self';",
+          `connect-src 'self' ${process.env.DEV ? 'ws://localhost:8080 ' : ''}https://lead-three-pi.vercel.app https://omkarpp.app.n8n.cloud`,
+          "script-src 'self' 'unsafe-inline' 'unsafe-eval';",
+          "style-src 'self' 'unsafe-inline';",
+          "img-src 'self' data: https:;",
+          "font-src 'self';",
+          "frame-src 'self';",
+          "media-src 'self'"
+        ].join(' ')
+      },
       fs: {
         strict: false
       },
@@ -63,13 +101,27 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')
-      }
+      },
+      // Ensure proper extension resolution
+      extensions: ['.mjs', '.js', '.mts', '.ts', '.jsx', '.tsx', '.json']
     },
     build: {
       outDir: 'dist',
       emptyOutDir: true,
       sourcemap: true,
+      manifest: true,
+      minify: 'esbuild',
+      modulePreload: {
+        polyfill: true
+      },
+      commonjsOptions: {
+        transformMixedEsModules: true,
+        esmExternals: true
+      },
+      target: 'es2020',
+      cssCodeSplit: true,
       rollupOptions: {
+        external: ['react', 'react-dom'],
         output: {
           entryFileNames: 'assets/[name].[hash].js',
           chunkFileNames: 'assets/[name].[hash].js',
