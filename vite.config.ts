@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
+import { createHtmlPlugin } from "vite-plugin-html";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
@@ -40,16 +41,34 @@ export default defineConfig(({ mode }) => {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
         'Access-Control-Allow-Headers': 'X-Requested-With, Content-Type, Authorization',
-        'Content-Security-Policy': [
-          "default-src 'self';",
-          `connect-src 'self' ${process.env.DEV ? 'ws://localhost:8080 ' : ''}https://lead-three-pi.vercel.app https://omkarpp.app.n8n.cloud`,
-          "script-src 'self' 'unsafe-inline' 'unsafe-eval';",
-          "style-src 'self' 'unsafe-inline';",
-          "img-src 'self' data: https:;",
-          "font-src 'self';",
-          "frame-src 'self';",
-          "media-src 'self'"
-        ].join(' ')
+        ...(mode === 'production' ? {
+          'Content-Security-Policy': [
+            `default-src 'self'`,
+            `base-uri 'self'`,
+            `connect-src 'self' https://lead-three-pi.vercel.app https://omkarpp.app.n8n.cloud`,
+            `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+            `style-src 'self' 'unsafe-inline'`,
+            `img-src 'self' data: https:`,
+            `font-src 'self' data:`,
+            `frame-src 'self'`,
+            `media-src 'self'`,
+            `object-src 'none'`,
+            `worker-src 'self' blob:`
+          ].join('; ')
+        } : {
+          'Content-Security-Policy-Report-Only': [
+            `default-src 'self'`,
+            `connect-src 'self' ws://localhost:8080 http://localhost:8080`,
+            `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+            `style-src 'self' 'unsafe-inline'`,
+            `img-src 'self' data: https:`,
+            `font-src 'self' data:`,
+            `frame-src 'self'`,
+            `media-src 'self'`,
+            `object-src 'none'`,
+            `worker-src 'self' blob:`
+          ].join('; ')
+        })
       },
       fs: {
         strict: false
@@ -92,7 +111,32 @@ export default defineConfig(({ mode }) => {
       }
     },
     plugins: [
+      // Use default React plugin with automatic JSX runtime
       react(),
+      createHtmlPlugin({
+        minify: true,
+        inject: {
+          data: {
+            csp: mode === 'production' ? `
+              <meta http-equiv="Content-Security-Policy" content="
+                default-src 'self';
+                base-uri 'self';
+                connect-src 'self' https://lead-three-pi.vercel.app https://omkarpp.app.n8n.cloud;
+                script-src 'self' 'unsafe-inline' 'unsafe-eval';
+                script-src-attr 'none';
+                style-src 'self' 'unsafe-inline';
+                img-src 'self' data: https:;
+                font-src 'self' data:;
+                frame-src 'self';
+                media-src 'self';
+                object-src 'none';
+                worker-src 'self' blob:;
+              ">
+            `.replace(/\s+/g, ' ').trim() : ''
+          }
+        },
+        template: 'index.html',
+      }),
       mode === "development" && componentTagger()
     ].filter(Boolean),
     define: {
