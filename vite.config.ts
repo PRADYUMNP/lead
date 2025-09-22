@@ -163,19 +163,16 @@ export default defineConfig(({ mode }) => {
         esmExternals: true
       },
       target: 'es2020',
-      cssCodeSplit: true,
       rollupOptions: {
-        external: ['react', 'react-dom'],
         output: {
-          entryFileNames: 'assets/[name].[hash].js',
-          chunkFileNames: 'assets/[name].[hash].js',
-          assetFileNames: 'assets/[name].[hash][extname]',
-          manualChunks: {
-            react: ['react', 'react-dom'],
-            vendor: ['@tanstack/react-query']
-          }
-        }
+          // Let Vite handle chunking automatically
+          manualChunks: undefined,
+        },
+      },
+      // Enable dynamic imports for better code splitting
+      dynamicImportVarsOptions: {
+        exclude: []
       }
-    }
+    },
   };
 });
