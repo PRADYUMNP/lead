@@ -1,5 +1,24 @@
 import { Lead } from "@/types/lead";
 
+interface WebhookLeadItem {
+  'Lead ID'?: string;
+  'Name': string;
+  'Email'?: string;
+  'Company'?: string;
+  'Phone'?: string;
+  'Status'?: string;
+  'Source'?: string;
+  'Last Contacted'?: string;
+  'Follow-up Date'?: string;
+  'Notes'?: string;
+  row_number?: number;
+  'Date Added'?: string;
+  'Contact'?: string;
+  'Follow-up'?: string;
+  [key: string]: unknown; // For any additional fields
+}
+
+// Using relative path to leverage Vite's proxy in development
 const API_ROUTE = "/api/leads";
 
 /**
@@ -33,31 +52,35 @@ export const fetchLeads = async (): Promise<Lead[]> => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        "Cache-Control": "no-cache"
       },
-      cache: 'no-store' // Ensure fresh data is fetched
+      credentials: 'same-origin' // Important for cookies, authorization headers with HTTPS
     });
 
     const responseText = await response.text();
     
     // Log the raw response for debugging
-    console.log('Raw response:', responseText.substring(0, 200) + (responseText.length > 200 ? '...' : ''));
-
+    console.log('Raw response status:', response.status);
+    console.log('Response headers:', JSON.stringify([...response.headers.entries()]));
+    
     if (!response.ok) {
-      throw new Error(`Failed to fetch leads: ${response.status} ${response.statusText}\n${responseText}`);
+      console.error('Error response:', responseText);
+      throw new Error(`Failed to fetch leads: ${response.status} ${response.statusText}`);
     }
 
     // Try to parse the response as JSON
-    let data;
+    let data: WebhookLeadItem[] | unknown;
     try {
       data = JSON.parse(responseText);
     } catch (parseError) {
       console.error('Failed to parse response as JSON:', parseError);
+      console.error('Response text:', responseText);
       throw new Error(`Invalid JSON response from server: ${responseText.substring(0, 200)}...`);
     }
 
     // Transform the webhook response data to match our Lead interface
     if (Array.isArray(data)) {
-      return data.map((item: any) => ({
+      return data.map((item: WebhookLeadItem) => ({
         id: item['Lead ID'] || `L${String(item.row_number || Math.random()).padStart(4, '0')}`,
         name: item['Name'] || '',
         email: '', // Not provided in webhook data

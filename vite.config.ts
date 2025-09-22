@@ -9,20 +9,29 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     proxy: {
-      '/api/leads': {
+      '/api': {
         target: 'https://omkarpp.app.n8n.cloud',
         changeOrigin: true,
-        rewrite: (path) => {
-          console.log('Proxying request to n8n webhook');
-          return path.replace(/^\/api\/leads/, '/webhook/a209c902-a436-48b5-bcdd-1ae79ae1a99b');
-        },
         secure: false,
+        rewrite: (path) => {
+          console.log('Proxying request to n8n webhook:', path);
+          // Map /api/leads to the n8n webhook
+          if (path.startsWith('/api/leads')) {
+            return '/webhook/a209c902-a436-48b5-bcdd-1ae79ae1a99b';
+          }
+          return path;
+        },
         configure: (proxy, _options) => {
-          proxy.on('error', (err, _req, _res) => {
-            console.log('Proxy error:', err);
+          proxy.on('error', (err, req, res) => {
+            console.error('Proxy error:', err);
+            if (!res.headersSent) {
+              res.writeHead(500, { 'Content-Type': 'application/json' });
+            }
+            res.end(JSON.stringify({ error: 'Proxy error', details: err.message }));
           });
           proxy.on('proxyReq', (proxyReq, req, _res) => {
-            console.log('Sending request to:', req.url);
+            console.log('Proxying request to:', req.url);
+            proxyReq.setHeader('Accept', 'application/json');
           });
           proxy.on('proxyRes', (proxyRes, req, _res) => {
             console.log('Received response with status:', proxyRes.statusCode);
